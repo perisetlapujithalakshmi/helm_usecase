@@ -1,0 +1,12 @@
+replicaCount: 1
+
+image:
+  repository: pujithaperisetla01/helloworld
+  tag: latest
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 80
+  nodePort: 32123
+
