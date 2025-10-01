@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
-        KUBECONFIG = '/home/ubuntu/.kube/config'  // path to kubeconfig on Jenkins agent
+        KUBECONFIG = '/home/ubuntu/.kube/config'
+        IMAGE_NAME = "helloworld"
+        IMAGE_TAG  = "latest"
     }
 
     stages {
@@ -35,7 +37,7 @@ pipeline {
                     sh """
                       cd helm/helloworld
                       helm upgrade --install helloworld . \
-                        --set image.repository=$DOCKERHUB_USER/helloworld \
+                        --set image.repository=$DOCKERHUB_USER/$IMAGE_NAME \
                         --set image.tag=$IMAGE_TAG
                     """
                 }
