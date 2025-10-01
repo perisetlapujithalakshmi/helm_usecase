@@ -14,16 +14,20 @@ pipeline {
             }
         }
 
-        stage('Build & Push Docker Image') {
+        stage("Build Docker Image") {
             steps {
-                sh '''
-                  echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                  docker build -t $DOCKER_USERNAME/helloworld:latest .
-                  docker push $DOCKER_USERNAME/helloworld:latest
-                '''
+                sh "docker build -t $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG ."
             }
         }
 
+        stage("Push the Image to DockerHub") {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh 'echo $PASS | docker login -u $USER --password-stdin'
+                    sh 'docker push $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG'
+                }
+            }
+        }
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
