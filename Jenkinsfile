@@ -35,11 +35,12 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
                     sh """
-                      cd helm
+                      cd helm/helloworld
                       helm upgrade --install helloworld . \
                         --set image.repository=$DOCKERHUB_USER/$IMAGE_NAME \
                         --set image.tag=$IMAGE_TAG
                     """
+
                 }
             }
         }
