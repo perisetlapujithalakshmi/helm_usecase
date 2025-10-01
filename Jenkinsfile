@@ -26,7 +26,7 @@ pipeline {
                     export KUBECONFIG=/data/kube/config
                     helm uninstall hello --namespace default || true
                     helm install hello ./helloworld \
-                        --set image.repository=dockerhub-username/hello \
+                        --set image.repository=pujithaperisetla01/hello \
                         --set image.tag=latest \
                         --namespace default
                 """
