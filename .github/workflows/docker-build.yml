@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted   # 👈 runs on your VM, not GitHub cloud runner
 
     steps:
       - name: Checkout code
@@ -27,19 +27,9 @@ jobs:
         with:
           version: v3.12.0
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: v1.27.0
-
-      - name: Configure kubeconfig
-        run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG_CONTENT }}" > $HOME/.kube/config
-          export KUBECONFIG=$HOME/.kube/config
-
       - name: Deploy to Kubernetes with Helm
         run: |
+          export KUBECONFIG=/data/kube/config   # 👈 using same kubeconfig as Jenkins
           helm uninstall hello --namespace default || true
           helm install hello ./helloworld \
             --set image.repository=${{ secrets.DOCKER_USERNAME }}/hello \
