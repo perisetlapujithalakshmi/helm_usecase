@@ -3,8 +3,7 @@ pipeline {
 
     environment {
         KUBECONFIG = '/home/ubuntu/.kube/config'  // path to kubeconfig on Jenkins agent
-        DOCKER_USERNAME = credentials('docker-creds-username') // DockerHub username
-        DOCKER_PASSWORD = credentials('docker-creds-password') // DockerHub token
+
     }
 
     stages {
