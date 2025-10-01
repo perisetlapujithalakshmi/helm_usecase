@@ -30,6 +30,11 @@ pipeline {
                 }
             }
         }
+        stage('Print Workspace') {
+    steps {
+        sh 'echo $WORKSPACE'
+    }
+}
 
         stage('Deploy to Kubernetes') {
             steps {
