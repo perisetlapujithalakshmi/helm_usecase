@@ -25,20 +25,19 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v3
         with:
-          version: v3.12.0 # change to your desired version
+          version: v3.12.0
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: v1.27.0 # change to your desired version
+          version: v1.27.0
 
       - name: Deploy to Kubernetes with Helm
         env:
-          KUBECONFIG: ${{ secrets.KUBECONFIG }} # store kubeconfig in GitHub Secrets
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
         run: |
-          helm repo update
           helm uninstall hello --namespace default || true
-          helm upgrade --install hello ./helloworld \
+          helm install hello ./helloworld \
             --set image.repository=${{ secrets.DOCKER_USERNAME }}/hello \
             --set image.tag=latest \
             --namespace default
