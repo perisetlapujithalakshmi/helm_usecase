@@ -34,16 +34,20 @@ pipeline {
             }
         }
 
-        stage("Deploy Helm Chart") {
-            steps {
-                withEnv(["KUBECONFIG=/data/kube/config"]) {
-    sh """
-        helm upgrade --install helloworld . \
-            --set image.repository=${DOCKERHUB_USER}/${IMAGE_NAME} \
-            --set image.tag=${IMAGE_TAG}
-    """
-}
+      stage('Deploy Helm Chart') {
+    steps {
+        withEnv(["KUBECONFIG=/data/kube/config"]) {
+            dir("${WORKSPACE}/helm/helloworld") {
+                sh """
+                    helm upgrade --install helloworld . \
+                        --set image.repository=${DOCKERHUB_USER}/${IMAGE_NAME} \
+                        --set image.tag=${IMAGE_TAG}
+                """
             }
+        }
+    }
+}
+
         }
     }
 }
