@@ -37,17 +37,17 @@ pipeline {
 }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                    sh """
-                      cd helm/helloworld
-                      helm upgrade --install helloworld . \
-                        --set image.repository=$DOCKERHUB_USER/$IMAGE_NAME \
-                        --set image.tag=$IMAGE_TAG
-                    """
-
-                }
-            }
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+            sh """
+                cd ${WORKSPACE}/helm/helloworld
+                helm upgrade --install helloworld . \
+                    --set image.repository=pujithaperisetla01/helloworld \
+                    --set image.tag=latest
+            """
         }
+    }
+}
+
     }
 }
