@@ -12,10 +12,11 @@ pipeline {
 
     stages {
         stage('Checkout Code') {
-            steps {
-                git 'https://github.com/perisetlapujithalakshmi/helm_usecase.git'
-            }
-        }
+    steps {
+        git branch: 'main', url: 'https://github.com/perisetlapujithalakshmi/helm_usecase.git'
+    }
+}
+
 
         stage('Helm Deploy') {
             steps {
