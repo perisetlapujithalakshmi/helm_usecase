@@ -36,13 +36,13 @@ pipeline {
 
         stage("Deploy Helm Chart") {
             steps {
-                dir("${WORKSPACE}/helm_usecase/helloworld") {
-                    sh """
-                        helm upgrade --install helloworld . \
-                            --set image.repository=${DOCKERHUB_USER}/${IMAGE_NAME} \
-                            --set image.tag=${IMAGE_TAG}
-                    """
-                }
+                withEnv(["KUBECONFIG=/data/kube/config"]) {
+    sh """
+        helm upgrade --install helloworld . \
+            --set image.repository=${DOCKERHUB_USER}/${IMAGE_NAME} \
+            --set image.tag=${IMAGE_TAG}
+    """
+}
             }
         }
     }
