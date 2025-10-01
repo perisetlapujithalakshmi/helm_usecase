@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'dockerhub-username/hello'
+        DOCKER_IMAGE = 'pujithaperisetla01/hello'
         DOCKER_TAG = 'latest'
         HELM_RELEASE_NAME = 'helloworld-release'
         HELM_CHART_PATH = './helloworld'
