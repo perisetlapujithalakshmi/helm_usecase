@@ -7,16 +7,15 @@ pipeline {
         HELM_RELEASE_NAME = 'helloworld-release'
         HELM_CHART_PATH = './helloworld'
         K8S_NAMESPACE = 'default'
-        KUBECONFIG_CREDENTIALS_ID = 'kubeconfig-credentials'
+        KUBECONFIG_PATH = '/data/kube/config'
     }
 
     stages {
         stage('Checkout Code') {
-    steps {
-        git branch: 'main', url: 'https://github.com/perisetlapujithalakshmi/helm_usecase.git'
-    }
-}
-
+            steps {
+                git branch: 'main', url: 'https://github.com/perisetlapujithalakshmi/helm_usecase.git'
+            }
+        }
 
         stage('Helm Deploy') {
             steps {
@@ -24,6 +23,7 @@ pipeline {
                     script {
                         sh """
                             echo "$PASS" | docker login -u "$USER" --password-stdin
+                            export KUBECONFIG=${KUBECONFIG_PATH}
                             helm upgrade --install ${HELM_RELEASE_NAME} ${HELM_CHART_PATH} \
                                 --set image.repository=${DOCKER_IMAGE} \
                                 --set image.tag=${DOCKER_TAG} \
