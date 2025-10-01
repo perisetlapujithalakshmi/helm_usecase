@@ -3,21 +3,27 @@ pipeline {
 
     environment {
         KUBECONFIG = '/home/ubuntu/.kube/config'
-        IMAGE_NAME = "helloworld"
+        IMAGE_NAME = "hello"
         IMAGE_TAG  = "latest"
     }
 
     stages {
-        stage('Checkout Code') {
+
+        stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/perisetlapujithalakshmi/helm_usecase.git'
+                // Clean workspace and clone fresh repo
+                sh "rm -rf ${WORKSPACE}/*"
+                sh "git clone -b main https://github.com/perisetlapujithalakshmi/helm_usecase.git ${WORKSPACE}/helm_repo"
             }
         }
 
         stage("Build Docker Image") {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                    sh "docker build -t $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG ."
+                    sh """
+                        cd ${WORKSPACE}/helm_repo/helm
+                        docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} .
+                    """
                 }
             }
         }
@@ -25,29 +31,23 @@ pipeline {
         stage("Push the Image to DockerHub") {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                    sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
-                    sh "docker push $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG"
+                    sh """
+                        echo ${DOCKERHUB_PASS} | docker login -u ${DOCKERHUB_USER} --password-stdin
+                        docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                    """
                 }
             }
         }
-        stage('Print Workspace') {
-    steps {
-        sh 'echo $WORKSPACE'
-    }
-}
 
         stage('Deploy to Kubernetes') {
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-            sh """
-                cd ${WORKSPACE}/helm/helloworld
-                helm upgrade --install helloworld . \
-                    --set image.repository=pujithaperisetla01/helloworld \
-                    --set image.tag=latest
-            """
+            steps {
+                sh """
+                    cd ${WORKSPACE}/helm_repo/helm/helloworld
+                    helm install helloworld-$(date +%s) . \
+                        --set image.repository=${DOCKERHUB_USER}/${IMAGE_NAME} \
+                        --set image.tag=${IMAGE_TAG}
+                """
+            }
         }
-    }
-}
-
     }
 }
