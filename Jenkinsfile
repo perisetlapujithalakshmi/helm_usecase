@@ -2,52 +2,35 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USER = 'pujithaperisetla01'
-        IMAGE_NAME     = 'helloworld'
-        IMAGE_TAG      = 'latest'
-        KUBECONFIG     = '/home/ubuntu/.kube/config'
+        DOCKER_IMAGE = 'dockerhub-username/hello'
+        DOCKER_TAG = 'latest'
+        HELM_RELEASE_NAME = 'helloworld-release'
+        HELM_CHART_PATH = './helloworld'
+        K8S_NAMESPACE = 'default'
+        KUBECONFIG_CREDENTIALS_ID = 'kubeconfig-credentials'
     }
 
     stages {
-        stage("Clone Helm Repo") {
+        stage('Checkout Code') {
             steps {
-                dir("${WORKSPACE}/helm_usecase") {
-                    git branch: 'main', url: 'https://github.com/perisetlapujithalakshmi/helm_usecase.git'
+                git 'https://github.com/perisetlapujithalakshmi/helm_usecase.git'
+            }
+        }
+
+        stage('Helm Deploy') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    script {
+                        sh """
+                            echo "$PASS" | docker login -u "$USER" --password-stdin
+                            helm upgrade --install ${HELM_RELEASE_NAME} ${HELM_CHART_PATH} \
+                                --set image.repository=${DOCKER_IMAGE} \
+                                --set image.tag=${DOCKER_TAG} \
+                                --namespace ${K8S_NAMESPACE}
+                        """
+                    }
                 }
             }
-        }
-
-        stage("Build Docker Image") {
-            steps {
-                dir("${WORKSPACE}/helm_usecase") {
-                    sh "docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
-                }
-            }
-        }
-
-        stage("Push Docker Image") {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER_VAR', passwordVariable: 'DOCKERHUB_PASS')]) {
-                    sh "echo ${DOCKERHUB_PASS} | docker login -u ${DOCKERHUB_USER_VAR} --password-stdin"
-                    sh "docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
-                }
-            }
-        }
-
-      stage('Deploy Helm Chart') {
-    steps {
-        withEnv(["KUBECONFIG=/data/kube/config"]) {
-            dir("${WORKSPACE}/helm/helloworld") {
-                sh """
-                    helm upgrade --install helloworld . \
-                        --set image.repository=${DOCKERHUB_USER}/${IMAGE_NAME} \
-                        --set image.tag=${IMAGE_TAG}
-                """
-            }
-        }
-    }
-}
-
         }
     }
 }
