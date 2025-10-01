@@ -18,20 +18,23 @@ pipeline {
         }
 
         stage('Helm Deploy') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    script {
-                        sh """
-                            echo "$PASS" | docker login -u "$USER" --password-stdin
-                            export KUBECONFIG=${KUBECONFIG_PATH}
-                            helm upgrade --install ${HELM_RELEASE_NAME} ${HELM_CHART_PATH} \
-                                --set image.repository=${DOCKER_IMAGE} \
-                                --set image.tag=${DOCKER_TAG} \
-                                --namespace ${K8S_NAMESPACE}
-                        """
-                    }
-                }
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+            script {
+                sh """
+                    echo "$PASS" | docker login -u "$USER" --password-stdin
+                    export KUBECONFIG=/data/kube/config
+                    helm uninstall hello --namespace default || true
+                    helm install hello ./helloworld \
+                        --set image.repository=dockerhub-username/hello \
+                        --set image.tag=latest \
+                        --namespace default
+                """
             }
+        }
+    }
+}
+
         }
     }
 }
