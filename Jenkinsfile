@@ -2,51 +2,57 @@ pipeline {
     agent any
 
     environment {
-        KUBECONFIG = '/home/ubuntu/.kube/config'
-        IMAGE_NAME = "hello"
-        IMAGE_TAG  = "latest"
+        DOCKERHUB_USER = 'pujithaperisetla01'
+        IMAGE_NAME     = 'helloworld'
+        IMAGE_TAG      = 'latest'
     }
 
     stages {
-
-        stage('Clone Repository') {
+        stage("Clone Git Repo") {
             steps {
-                // Clean workspace and clone fresh repo
-                sh "rm -rf ${WORKSPACE}/*"
-                sh "git clone -b main https://github.com/perisetlapujithalakshmi/helm_usecase.git ${WORKSPACE}/helm_repo"
+                dir('/data/kubernetes/usecase') {
+                    git branch: 'main', url: 'https://github.com/perisetlapujithalakshmi/kubernetes_usecase.git'
+                }
             }
         }
 
         stage("Build Docker Image") {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                    sh """
-                        cd ${WORKSPACE}/helm_repo/helm
-                        docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} .
-                    """
+                dir('/data/kubernetes/usecase') { // Make sure Docker build runs in correct directory
+                    sh "docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
                 }
             }
         }
 
         stage("Push the Image to DockerHub") {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     sh """
-                        echo ${DOCKERHUB_PASS} | docker login -u ${DOCKERHUB_USER} --password-stdin
+                        echo $PASS | docker login -u $USER --password-stdin
                         docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
                     """
                 }
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage("Scan Image") {
             steps {
-                sh """
-                    cd ${WORKSPACE}/helm_repo/helm/helloworld
-                    helm install helloworld-$(date +%s) . \
-                        --set image.repository=${DOCKERHUB_USER}/${IMAGE_NAME} \
-                        --set image.tag=${IMAGE_TAG}
-                """
+                withEnv(["TRIVY_CACHE_DIR=/data/trivy_cache"]) {
+                    sh "trivy image ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes via Helm') {
+            steps {
+                withEnv(["KUBECONFIG=/home/ubuntu/.kube/config"]) {
+                    sh """
+                        cd /data/kubernetes/helm/helloworld
+                        helm upgrade --install helloworld . \
+                            --set image.repository=${DOCKERHUB_USER}/${IMAGE_NAME} \
+                            --set image.tag=${IMAGE_TAG}
+                    """
+                }
             }
         }
     }
