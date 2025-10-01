@@ -32,9 +32,12 @@ jobs:
         with:
           version: v1.27.0
 
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" > $HOME/.kube/config
+          export KUBECONFIG=$HOME/.kube/config
+
       - name: Deploy to Kubernetes with Helm
-        env:
-          KUBECONFIG: ${{ secrets.KUBECONFIG }}
         run: |
           helm uninstall hello --namespace default || true
           helm install hello ./helloworld \
